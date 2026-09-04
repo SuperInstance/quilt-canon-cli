@@ -1,0 +1,41 @@
+{
+  "name": "@superinstance/quilt-canon-cli-gh",
+  "version": "0.1.1",
+  "description": "A unified CLI for the Live Canon. `canon claim`, `canon drill`, `canon hash`, `canon graph`, `canon paper`. Wraps the @superinstance/canon-*, @superinstance/live-canon packages.",
+  "main": "index.js",
+  "bin": {
+    "canon": "bin/canon"
+  },
+  "files": [
+    "bin/canon",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node test/test.js"
+  },
+  "dependencies": {
+    "@superinstance/canon-claim": "^0.1.0",
+    "@superinstance/canon-hash": "^0.1.0",
+    "@superinstance/canon-graph": "^0.1.0"
+  },
+  "keywords": [
+    "quilt",
+    "live-canon",
+    "cli",
+    "rag",
+    "ai-writings"
+  ],
+  "author": "Casey Digennaro <superinstance@users.noreply.github.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SuperInstance/quilt-canon-cli.git"
+  },
+  "homepage": "https://live-canon.superinstance.dev",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}

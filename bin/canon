@@ -1,0 +1,120 @@
+#!/usr/bin/env node
+// bin/canon — a single CLI that wraps all 7 canon operations
+//   canon claim <topic>
+//   canon drill <topic>
+//   canon hash
+//   canon count
+//   canon graph <paper_num> [depth]
+//   canon paper <paper_num>
+
+const { claim, drill } = require('@superinstance/canon-claim');
+const { getHex, stateHash } = require('@superinstance/canon-hash');
+const { fetchCanon, renderGraph } = require('@superinstance/canon-graph');
+
+async function main() {
+  const args = process.argv.slice(2);
+  const cmd = args[0];
+  if (!cmd || cmd === 'help' || cmd === '--help') {
+    printHelp();
+    return;
+  }
+  if (cmd === 'claim') {
+    const topic = args.slice(1).join(' ');
+    if (!topic) { console.error('Usage: canon claim <topic>'); process.exit(1); }
+    const r = await claim(topic);
+    if (!r.winner) {
+      console.log('  No matching paper for "' + topic + '"');
+      return;
+    }
+    console.log('Query: ' + r.query);
+    console.log('Tokens: ' + r.tokens.join(', '));
+    console.log('Total candidates: ' + r.total_candidates);
+    console.log('');
+    console.log('WINNER: paper-' + r.winner.number + ' (F' + r.winner.f_number + ') ' + r.winner.title);
+    console.log('  date: ' + r.winner.date + '   phase: ' + r.winner.phase);
+    console.log('  score: ' + r.winner.score + '   refs: F' + r.winner.ref_f_numbers.join(', F'));
+    console.log('  excerpt: ' + r.winner.excerpt.slice(0, 200) + '...');
+    if (r.runners_up && r.runners_up.length) {
+      console.log('');
+      console.log('Runners-up:');
+      for (const ru of r.runners_up) {
+        console.log('  - paper-' + ru.number + ' (F' + ru.f_number + ') score=' + ru.score + ' ' + ru.title);
+      }
+    }
+    return;
+  }
+  if (cmd === 'drill') {
+    const topic = args.slice(1).join(' ');
+    if (!topic) { console.error('Usage: canon drill <topic>'); process.exit(1); }
+    const r = await drill(topic);
+    if (r.error) { console.log('  ' + r.error); return; }
+    console.log('Query: ' + r.query);
+    for (const role of ['doctrine', 'implementation', 'verification']) {
+      const c = r.curriculum[role];
+      if (!c) continue;
+      const color = role === 'doctrine' ? '\x1b[32m' : role === 'implementation' ? '\x1b[33m' : '\x1b[35m';
+      console.log('');
+      console.log(color + role.toUpperCase() + '\x1b[0m: paper-' + c.number + ' (F' + c.f_number + ') ' + c.title);
+      console.log('  ' + c.role);
+      console.log('  score: ' + c.score);
+      console.log('  excerpt: ' + c.excerpt.slice(0, 200) + '...');
+    }
+    return;
+  }
+  if (cmd === 'hash') {
+    const h = await stateHash();
+    console.log(JSON.stringify(h, null, 2));
+    return;
+  }
+  if (cmd === 'count') {
+    const canon = await fetchCanon();
+    const papers = canon.papers || canon;
+    console.log('papers in canon: ' + (canon.count || Object.keys(papers).length));
+    return;
+  }
+  if (cmd === 'graph') {
+    const start = parseInt(args[1] || '470', 10);
+    const depth = parseInt(args[2] || '1', 10);
+    const canon = await fetchCanon();
+    const papers = canon.papers || canon;
+    // Build a number-keyed map for renderGraph
+    const byNum = {};
+    for (const p of papers) byNum[p.number] = p;
+    const g = renderGraph(byNum, { start, depth });
+    console.log(g);
+    return;
+  }
+  if (cmd === 'paper') {
+    const num = parseInt(args[1] || '', 10);
+    if (!num) { console.error('Usage: canon paper <paper_num>'); process.exit(1); }
+    const canon = await fetchCanon();
+    const papers = canon.papers || canon;
+    const p = papers.find(x => x.number === num);
+    if (!p) { console.log('  paper-' + num + ' not found'); return; }
+    console.log('paper-' + p.number + ' (F' + p.f_number + ') ' + p.title);
+    console.log('  date: ' + p.date + '   phase: ' + p.phase);
+    console.log('  refs: paper-' + (p.ref_papers || []).join(', paper-'));
+    console.log('  f-refs: F' + (p.ref_f_numbers || []).join(', F'));
+    return;
+  }
+  printHelp();
+}
+
+function printHelp() {
+  console.log('canon — Live Canon CLI (https://live-canon.superinstance.dev)');
+  console.log('');
+  console.log('Usage:');
+  console.log('  canon claim <topic>          Find the most-authoritative paper for a topic');
+  console.log('  canon drill <topic>          Get a 3-paper training curriculum');
+  console.log('  canon hash                   Print the FNV-1a 64-bit state hash');
+  console.log('  canon count                  Print the number of papers in the canon');
+  console.log('  canon graph <num> [depth]    Render a BFS graph from paper-num');
+  console.log('  canon paper <num>            Print paper-num');
+  console.log('');
+  console.log('Examples:');
+  console.log('  canon claim "trust ladder"');
+  console.log('  canon drill "Mudra vessel bridge"');
+  console.log('  canon graph 470 2');
+}
+
+main().catch(err => { console.error('error:', err.message); process.exit(1); });
