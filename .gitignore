@@ -1,4 +1,2 @@
-.npmrc
-node_modules
-*.tgz
-package-lock.json
+__pycache__/
+*.pyc

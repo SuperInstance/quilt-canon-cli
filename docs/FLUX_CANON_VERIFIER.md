@@ -144,6 +144,52 @@ Constraint #7 is the one that shaped the build: 64-bit FNV runs as 4×u16 limbs 
 
 ### What remains
 
-- **P1 — 71-paper fabric:** serializer for the full canon cell list → `CANON_TARGET 0x445185a3a99fd2e7`. Straightforward: codegen is already length-parameterized; the work is corpus cell enumeration, not VM work.
-- **P1 — proof certificates:** `to_bytecode()` SHA-256 recorded per repo CANON.json (`verified.flux_proof`).
 - **P2 — escape extension `0xFF 0x80` CANON_DIAL_FMA:** the draft's escape space is real in the interpreter (`ESCAPE_PREFIX 0xFF`, `_dispatch_extension`), but adding a sub-opcode means forking the vendored interpreter — by the vendoring rule that fork must come with its own conformance test and a pin update.
+
+---
+
+## BUILT status — P1 complete (2026-09-20, lane flux-fabric-p1)
+
+### What exists now (stacked on P0)
+
+| Piece | Where | Commit |
+|-------|-------|--------|
+| Length-parameterized buffer zone: legacy placement kept for any input that fits below address 200 (P0 module + pin byte-identical, verified); larger inputs relocate the limb buffers 8-aligned above the input. MAX_INPUT 192 → 65000. | `flux_verifier/fxu_codegen.py` | `79eceb3` |
+| Host memory sized per input; explicit run() ceilings so fuel — never the max_steps bug-guard — is the binding constraint at fabric scale. | `flux_verifier/host.py` | `79eceb3` |
+| Corpus adapter + bundled snapshot: line-anchored worker.js parser, snapshot in the source repo's data.json shape (`canon_71.json`), cell construction byte-exact with worker stateHash (neighbors = ref_papers only). Triple-verified vs worker.js, pypi data.json, and the target hash. | `flux_verifier/corpus/` | `0eabfdb` |
+| Fabric verifier: sandboxed module over the 2927-byte corpus fabric → HALT hash compared vs CANON_TARGET; drift = FluxVerifyError (lint discipline). | `flux_verifier/fabric.py` | `42a177d` |
+| Proof certs: per-paper module SHA-256 (earned by fuel-bounded vm runs), fabric module cert, integrity recompute, CANON.json with certs at `verified.flux_proof`. | `flux_verifier/proof_certs.py`, `flux_verifier/proof_certs.json`, `CANON.json` | `42a177d` |
+| Tests: 18/18 pass (P0's 12 + corpus adapter, fabric vm, fabric fuel boundaries, cert integrity + tamper detection). | `test/test_flux_verify.py` | this PR |
+
+**P1 conformance claim:** the module reproduces `0x445185a3a99fd2e7` for the 71-paper fabric (2927 bytes) on the pinned interpreter, fuel-accounted (table below), verified against both the Python reference and the recorded target.
+
+### Fuel accounting — 71-paper fabric (2927-byte input)
+
+| Quantity | Value |
+|----------|-------|
+| Fabric input | 2927 bytes = 71 cells (ids 408..478; 1 cell with a neighbor list: 425 → [426,427]) |
+| Module bytecode | 392991 bytes, sha256 `9f48f433fa9aa43780c2ba1d358998411df8bbf001eb38d139e8cac122702af6` |
+| Exact metered instructions (fuel=0 measurement) | 152580 |
+| Host budget | 15258000 = **100× measured** — the design's corpus headroom, measured on the corpus itself; P0's 10× single-cell budget was NOT silently inherited |
+| Consumed / left | 152580 / 15111420 |
+| Boundary: budget == 152580 | OUT_OF_FUEL on the last metered op — 152580/152580 executed, fuel 0, HALT never reached |
+| Boundary: budget == 152581 | Clean HALT, hash reproduces target, 1 fuel to spare |
+
+### Proof certificates
+
+Per-paper certs (71) bind `number → n_bytes → module_sha256 → cell_hash`, every
+number earned in the sandbox (fuel-bounded vm run per paper, 10× headroom,
+4096 floor — the host.verify_cell rule). Integrity is pure recomputation from
+corpus + codegen (`check_cert_integrity`), verified clean and tamper-tested.
+Module SHA-256 is length-parameterized by design (the module IS the serializer
+spec for a given input length); content binding is carried by `cell_hash` and
+the fabric state hash. The org had no prior CANON.json shape, so
+`build_canon_json()` mirrors the fleet CANON.md field names and nests the
+certs at `verified.flux_proof` — the exact field path the design names.
+
+### Corpus provenance
+
+`SuperInstance/quilt-live-canon @ canon-71-full-corpus`, commit `371e07d`
+(bundled CANON in worker.js; live hash equals the target by construction,
+guarded upstream by test/canon-hash.test.mjs). Snapshot regeneration:
+`python3 -m flux_verifier.corpus._regen path/to/worker.js`.
