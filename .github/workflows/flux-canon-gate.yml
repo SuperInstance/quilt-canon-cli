@@ -1,0 +1,68 @@
+# flux-canon-gate — the canon's own immune system, run on every push/PR.
+#
+# The fabric verifier was a thing you ran by hand; this workflow makes
+# verification the gate. Tamper with the corpus, the certs, the codegen,
+# or the interpreter pin, and THIS is what fails — loud, with the drift
+# message in the log. See docs/FLUX_CANON_VERIFIER.md (lane lane-p-verify-gate).
+
+name: flux-canon-gate
+
+on:
+  push:
+    branches: [master, 'flux-*', 'lane-*']
+    paths:
+      - 'flux_verifier/**'
+      - 'fleet-canon/**'
+      - 'test/**'
+      - 'bin/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/flux-canon-gate.yml'
+  pull_request:
+    paths:
+      - 'flux_verifier/**'
+      - 'fleet-canon/**'
+      - 'test/**'
+      - 'bin/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/flux-canon-gate.yml'
+  workflow_dispatch:
+
+jobs:
+  # The immune system. Hermetic: stdlib-only Python, vendored corpus
+  # snapshot, vendored pinned interpreter. No network except the stub
+  # roster read. Green == the canon verifies; red == tamper or drift.
+  flux-gate:
+    name: FLUX fabric gate (clean passes, tamper fails)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: flux verifier self-test (18 checks — interpreter, fuel, fabric, certs)
+        run: python3 test/test_flux_verify.py
+      - name: lint gate tests (8 checks — BOTH directions, clean+tampered, CLI e2e)
+        run: python3 test/test_lint_gate.py
+      - name: canon-lint --verify-flux over the pinned 71-paper corpus
+        run: python3 fleet-canon/lint.py --dir test/fixtures/tier1 --verify-flux
+      - name: quick smoke path stays green (--quick = 9-cell P0 cross-check)
+        run: python3 fleet-canon/lint.py --dir test/fixtures/tier1 --verify-flux --quick
+
+  # The CLI smoke. Network-coupled BY DESIGN (it talks to the deployed
+  # live-canon service) — red here means the deployment lags or is down,
+  # NOT that the canon drifted. Kept in this workflow so the suite is
+  # complete; branch protection should require only flux-gate.
+  node-cli:
+    name: canon CLI smoke (live service)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: npm ci (packages are public on npmjs.org)
+        run: npm ci
+      - name: node test — CLI against the live canon service
+        run: npm test
