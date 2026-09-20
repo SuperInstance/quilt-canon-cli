@@ -70,7 +70,29 @@ def tier1_repos() -> list[str]:
     return repos
 
 
+class RateLimited(Exception):
+    """Raised when GitHub answers 403/429 — the sweep is INCOMPLETE, not clean."""
+
+    def __init__(self, repo: str, retry_after: str | None = None):
+        self.repo = repo
+        self.retry_after = retry_after
+        hint = f" (Retry-After: {retry_after}s)" if retry_after else ""
+        super().__init__(f"rate-limited checking {repo}{hint}")
+
+
+def _open_checked(req: urllib.request.Request, repo: str):
+    """urlopen that converts 403/429 into RateLimited instead of crashing
+    the whole sweep — a rate-limited run must report INCOMPLETE, never PASS."""
+    try:
+        return urllib.request.urlopen(req, timeout=30)
+    except urllib.error.HTTPError as exc:
+        if exc.code in (403, 429):
+            raise RateLimited(repo, exc.headers.get("Retry-After"))
+        raise
+
+
 def api(path: str, accept: str = "application/vnd.github+json") -> object:
+    repo = path.rstrip("/").rsplit("/", 1)[-1]  # best-effort label for errors
     req = urllib.request.Request(
         f"https://api.github.com{path}",
         headers={
@@ -81,7 +103,7 @@ def api(path: str, accept: str = "application/vnd.github+json") -> object:
             "User-Agent": "fleet-canon-lint",
         },
     )
-    with urllib.request.urlopen(req, timeout=30) as resp:
+    with _open_checked(req, repo) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
 
@@ -98,7 +120,7 @@ def fetch_canon_remote(repo: str) -> str | None:
         },
     )
         try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
+            with _open_checked(req, repo) as resp:
                 return resp.read().decode("utf-8")
         except urllib.error.HTTPError as exc:
             if exc.code == 404:
@@ -353,12 +375,18 @@ def main() -> int:
     warnings: list[str] = []
     coverage_missing: list[str] = []
 
+    incomplete: RateLimited | None = None
     for repo in repos:
         if args.dir:
             path = os.path.join(args.dir, repo, "CANON.md")
             text = open(path, encoding="utf-8").read() if os.path.exists(path) else None
         else:
-            text = fetch_canon_remote(repo)
+            try:
+                text = fetch_canon_remote(repo)
+            except RateLimited as exc:
+                incomplete = exc
+                print(f"  INCOMPLETE  {exc} — {len(canons)}/{len(repos)} checked")
+                break
         if text is None:
             coverage_missing.append(repo)
             continue
@@ -388,9 +416,17 @@ def main() -> int:
     if not args.dir:
         today = dt.date.today()
         for repo, canon in canons.items():
+            if incomplete is not None:
+                break
             verified = dt.date.fromisoformat(str(canon["verified"]))
             age = (today - verified).days
-            pushed_at = str(api(f"/repos/SuperInstance/{repo}").get("pushed_at", ""))[:10]
+            try:
+                pushed_at = str(api(f"/repos/SuperInstance/{repo}").get("pushed_at", ""))[:10]
+            except RateLimited as exc:
+                incomplete = exc
+                print(f"  INCOMPLETE  {exc} — staleness phase, "
+                      f"{len(canons)}/{len(repos)} canons fetched")
+                break
             pushed = dt.date.fromisoformat(pushed_at) if pushed_at else None
             stale_push = pushed is not None and pushed > verified
             if age > 90 and stale_push:
@@ -419,6 +455,12 @@ def main() -> int:
         print(f"  WARN  {warning}")
     for failure in failures:
         print(f"  FAIL  {failure}")
+    if incomplete is not None:
+        print(f"canon-lint: INCOMPLETE — stopped at {incomplete.repo} "
+              f"({len(canons)}/{len(repos)} checked); "
+              "set GITHUB_TOKEN or wait out the rate limit. "
+              "An unchecked sweep is never a PASS.")
+        return 2
     verdict = "FAIL" if failures else "PASS"
     print(f"canon-lint: {verdict} "
           f"({len(failures)} failures, {len(warnings)} warnings)")
