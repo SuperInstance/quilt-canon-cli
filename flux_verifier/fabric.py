@@ -25,9 +25,9 @@ from .fxu_codegen import build_module
 FABRIC_FUEL_HEADROOM = 100
 
 
-def fabric_fuel_facts() -> dict:
+def fabric_fuel_facts(canon: dict[str, dict] | None = None) -> dict:
     """Measured fuel accounting for the corpus fabric module."""
-    data = fabric_bytes()
+    data = fabric_bytes(canon)
     code = build_module(len(data))
     # unlimited-fuel measurement run (fuel=0): exact step count
     _, steps, _, exit_name = run_module(data, fuel=0)
@@ -43,15 +43,19 @@ def fabric_fuel_facts() -> dict:
     }
 
 
-def verify_fabric(fuel: int | None = None) -> dict:
+def verify_fabric(fuel: int | None = None,
+                  canon: dict[str, dict] | None = None) -> dict:
     """Sandboxed verification of the 71-paper corpus fabric.
 
-    Returns a result dict (hash, fuel accounting, exit). Raises
-    FluxVerifyError on drift (vm != CANON_TARGET), on vm != python reference,
-    or on any non-HALT exit — exactly the lint drift discipline.
+    canon overrides the bundled snapshot (None → pinned bundle) so callers
+    can verify a candidate corpus — the lint gate's fixture trees and
+    quilt-live-canon's companion CI both verify bytes that are NOT the
+    bundle. Returns a result dict (hash, fuel accounting, exit). Raises
+    FluxVerifyError on drift (vm != CANON_TARGET), on vm != python
+    reference, or on any non-HALT exit — exactly the lint drift discipline.
     """
-    data = fabric_bytes()
-    facts = fabric_fuel_facts()
+    data = fabric_bytes(canon)
+    facts = fabric_fuel_facts(canon)
     budget = fuel if fuel is not None else facts["fuel_budget"]
     h, ran, left, exit_name = run_module(data, fuel=budget)
     expected_ref = fnv1a_64_bytes(data)

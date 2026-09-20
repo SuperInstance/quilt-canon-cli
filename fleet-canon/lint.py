@@ -16,16 +16,24 @@ Usage:
   python3 fleet-canon/lint.py                 # remote, over tier1.txt
   python3 fleet-canon/lint.py --dir fixtures  # local dirs {dir}/{repo}/CANON.md
   python3 fleet-canon/lint.py --enforce-coverage
-  python3 fleet-canon/lint.py --verify-flux   # + FLUX module vs reference hash check
+  python3 fleet-canon/lint.py --verify-flux   # + FULL 71-paper FLUX fabric gate
+  python3 fleet-canon/lint.py --verify-flux --quick  # + 9-cell P0 smoke only
 
 Stdlib only. GITHUB_TOKEN used if set (55+ API calls otherwise squeak under
 the anonymous 60/hr budget; the token makes it relaxed).
 
---verify-flux (P0, see docs/FLUX_CANON_VERIFIER.md): runs the fuel-bounded
-FLUX canon-verifier module against the Python reference serializer for the
-pinned contract cell plus a seeded synthetic sample. When flux_verifier (or
-its pinned interpreter / canon_verify.fxu) is absent, lint prints an honest
-SKIP line and NEVER fails on that account.
+--verify-flux (P2, see docs/FLUX_CANON_VERIFIER.md — "the canon's own immune
+system"): by DEFAULT this runs the full 71-paper fabric gate over the pinned
+corpus snapshot: reference-hash drift check, sandboxed fabric verification
+under the measured corpus fuel budget, and a full recompute of every
+recorded proof certificate. ANY drift — corpus hash mismatch, vm/reference
+drift, cert recompute failure, fuel boundary violation — is a lint FAILURE
+with the same reporting shape as the drift check above.
+--quick selects the old P0 smoke (contract cell + seeded synthetic sample,
+no corpus) for hosts that want the cheap vm==reference cross-check without
+the fabric cost. When flux_verifier (or its pinned interpreter /
+canon_verify.fxu) is absent, lint prints an honest SKIP line and NEVER
+fails on that account.
 """
 from __future__ import annotations
 
@@ -133,38 +141,53 @@ def as_list(value: object) -> list[str]:
     return [str(v) for v in value] if isinstance(value, list) else []
 
 
-def verify_flux(sample_size: int) -> tuple[list[str], list[str]]:
-    """FLUX module-vs-reference canon hash check (P0).
+def verify_flux(sample_size: int, quick: bool = False,
+                corpus_path: str | None = None,
+                certs_path: str | None = None
+                ) -> tuple[list[str], list[str]]:
+    """The FLUX canon gate. quick=True → P0 smoke; quick=False (default)
+    → the full 71-paper fabric immune system (P2).
 
     Returns (failures, notes). Absent tooling is an honest SKIP, never a
     failure: the lint gate must stay green on hosts without the FLUX
     interpreter vendored.
     """
-    failures: list[str] = []
-    notes: list[str] = []
     pkg = os.path.join(ROOT, "flux_verifier")
     needed = ["interpreter.py", "canon_serializer.py", "host.py",
               "canon_verify.fxu"]
     missing = [f for f in needed if not os.path.exists(os.path.join(pkg, f))]
     if missing:
-        notes.append(f"flux-verify: SKIP — flux_verifier incomplete "
-                     f"(missing {missing})")
-        return failures, notes
+        return [], [f"flux-verify: SKIP — flux_verifier incomplete "
+                    f"(missing {missing})"]
     if ROOT not in sys.path:
         sys.path.insert(0, ROOT)
     try:
-        from flux_verifier import (  # noqa: PLC0415 — lazy by design
-            CONTRACT_CELL, CONTRACT_HASH, FluxVerifyError, verify_cell,
-        )
+        from flux_verifier import FluxVerifyError  # noqa: PLC0415
     except ImportError as exc:
-        notes.append(f"flux-verify: SKIP — flux_verifier not importable ({exc})")
-        return failures, notes
+        return [], [f"flux-verify: SKIP — flux_verifier not importable ({exc})"]
+    if quick:
+        return _verify_flux_smoke(sample_size, FluxVerifyError)
+    return _verify_flux_full(FluxVerifyError, corpus_path, certs_path)
+
+
+def _verify_flux_smoke(sample_size: int, flux_exc: type[Exception]
+                       ) -> tuple[list[str], list[str]]:
+    """P0 — contract cell + seeded synthetic sample through the sandbox.
+
+    The cheap vm==reference cross-check; kept as the --quick path when the
+    full fabric gate is overkill (embedded hosts, fast feedback loops).
+    """
+    failures: list[str] = []
+    notes: list[str] = []
+    from flux_verifier import (  # noqa: PLC0415 — lazy by design
+        CONTRACT_CELL, CONTRACT_HASH, verify_cell,
+    )
 
     def _run(cell_id: int, dials: list[int], neighbors: list[int],
              pinned: int | None = None) -> dict:
         result = verify_cell(cell_id, dials, neighbors)
         if pinned is not None and result["vm_hash"] != pinned:
-            raise FluxVerifyError(
+            raise flux_exc(
                 f"vm=0x{result['vm_hash']:016x} != pinned contract "
                 f"0x{pinned:016x}")
         return result
@@ -190,6 +213,86 @@ def verify_flux(sample_size: int) -> tuple[list[str], list[str]]:
     else:
         notes.append(f"flux-verify: OK {checked}/{checked} cells agree "
                      "(FLUX module == Python reference, fuel-bounded)")
+    return failures, notes
+
+
+def _verify_flux_full(flux_exc: type[Exception],
+                      corpus_path: str | None,
+                      certs_path: str | None
+                      ) -> tuple[list[str], list[str]]:
+    """P2 — the 71-paper fabric gate: the canon's own immune system.
+
+    Three lines of defense, each a different kind of drift:
+      1. corpus   the pinned snapshot's REFERENCE fabric hash must equal
+                  CANON_TARGET. Cheap (no vm), catches snapshot tamper or
+                  a stale bundle before any fuel is burned.
+      2. fabric   the sandboxed vm run must HALT with CANON_TARGET under
+                  the measured corpus fuel budget (100x). Catches
+                  interpreter/codegen/serializer drift.
+      3. certs    every recorded proof certificate (per-paper module
+                  SHA-256 + fabric cert) must recompute clean. Catches
+                  cert-file tamper and pins bytecode identity.
+
+    Any failure lands in `failures` with a flux-verify: prefix — the same
+    reporting shape as every other drift check in this linter.
+    corpus_path/certs_path exist so tests can point the gate at fixture
+    trees without touching the vendored bundle.
+    """
+    failures: list[str] = []
+    notes: list[str] = []
+    from flux_verifier import corpus, fabric, proof_certs  # noqa: PLC0415
+    from flux_verifier import fnv1a_64_bytes  # noqa: PLC0415
+
+    # Line 1 — corpus reference hash (cheap, no fuel burned).
+    try:
+        canon = corpus.load_corpus(corpus_path)
+        cells = corpus.corpus_cells(canon)
+        data = corpus.fabric_bytes(canon)
+        ref = fnv1a_64_bytes(data)
+    except Exception as exc:  # noqa: BLE001 — a broken corpus is a failure
+        failures.append(f"flux-verify: corpus unusable — {exc}")
+        return failures, notes
+    notes.append(
+        f"flux-verify: corpus {len(cells)} papers "
+        f"(ids {cells[0][0]}..{cells[-1][0]}, {len(data)} bytes, "
+        f"pinned {corpus.CORPUS_REPO}@{corpus.CORPUS_COMMIT[:7]})")
+    if ref != corpus.CANON_TARGET:
+        failures.append(
+            f"flux-verify: corpus drift — reference fabric hash "
+            f"0x{ref:016x} != canon target 0x{corpus.CANON_TARGET:016x} "
+            f"(snapshot tampered or stale; regenerate: "
+            f"python3 flux_verifier/corpus/_regen.py --fetch)")
+        return failures, notes  # lines 2/3 would be pure noise on bad bytes
+    notes.append(f"flux-verify: corpus reference hash == target "
+                 f"0x{corpus.CANON_TARGET:016x}")
+
+    # Line 2 — sandboxed fabric under the measured corpus fuel budget.
+    # The same corpus object flows through: gate, vm, and certs verify
+    # identical bytes, never three separate loads that could disagree.
+    try:
+        result = fabric.verify_fabric(canon=canon)
+    except Exception as exc:  # noqa: BLE001 — drift/trap/fuel death fails loud
+        failures.append(f"flux-verify: {exc}")
+    else:
+        notes.append(
+            f"flux-verify: fabric vm -> 0x{result['vm_hash']:016x} "
+            f"({result['steps']} steps, fuel {result['fuel_consumed']}/"
+            f"{result['fuel_budget']}, {result['fuel_left']} left)")
+
+    # Line 3 — proof certificate integrity (pure recompute).
+    try:
+        certs = proof_certs.load_proof_certs(certs_path)
+        problems = proof_certs.check_cert_integrity(certs, canon)
+    except Exception as exc:  # noqa: BLE001
+        failures.append(f"flux-verify: cert integrity check crashed — {exc}")
+        return failures, notes
+    for problem in problems:
+        failures.append(f"flux-verify: cert drift — {problem}")
+    if not problems:
+        n_papers = len(certs.get("papers", []))
+        digest = certs.get("fabric", {}).get("module_sha256", "")[:12]
+        notes.append(f"flux-verify: proof certs {n_papers}/{len(cells)} "
+                     f"recompute clean (fabric module {digest}…)")
     return failures, notes
 
 
@@ -227,10 +330,21 @@ def main() -> int:
                     help="scan GitHub remotes (default; flag accepted because "
                          "CI invokes lint with --remote)")
     ap.add_argument("--verify-flux", action="store_true",
-                    help="cross-check canon hashes: FLUX module vs Python "
-                         "reference (skips honestly when flux_verifier absent)")
+                    help="the FLUX canon gate: by default the FULL 71-paper "
+                         "fabric + proof certs (P2); skips honestly when "
+                         "flux_verifier absent")
+    ap.add_argument("--quick", action="store_true",
+                    help="with --verify-flux: the 9-cell P0 smoke instead "
+                         "of the full 71-paper fabric gate")
     ap.add_argument("--flux-sample", type=int, default=8,
-                    help="synthetic cells for --verify-flux (default 8)")
+                    help="synthetic cells for --verify-flux --quick "
+                         "(default 8)")
+    ap.add_argument("--flux-corpus", metavar="PATH",
+                    help="with --verify-flux: gate THIS corpus snapshot "
+                         "(candidate bytes) instead of the vendored bundle")
+    ap.add_argument("--flux-certs", metavar="PATH",
+                    help="with --verify-flux: recompute THESE proof certs "
+                         "instead of the recorded set")
     args = ap.parse_args()
 
     repos = tier1_repos()
@@ -291,9 +405,11 @@ def main() -> int:
         msg = f"coverage: {repo} has no CANON.md (Tier-1 requires one)"
         (failures if args.enforce_coverage else warnings).append(msg)
 
-    # FLUX module-vs-reference canon hash check (P0). Absent tooling skips.
+    # FLUX canon gate. Absent tooling skips.
     if args.verify_flux:
-        flux_failures, flux_notes = verify_flux(args.flux_sample)
+        flux_failures, flux_notes = verify_flux(
+            args.flux_sample, quick=args.quick,
+            corpus_path=args.flux_corpus, certs_path=args.flux_certs)
         failures.extend(flux_failures)
         for note in flux_notes:
             print(f"  INFO  {note}")
