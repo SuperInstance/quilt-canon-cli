@@ -69,14 +69,16 @@ with a conformance test, not a fork of the ISA.
 |---|-----|----------|
 | 1 | One bytecode module = one spec. Module hash IS the serializer spec. | 3 substrate harnesses kept in agreement by discipline |
 | 2 | Untrusted submissions verify inside a sandbox with a fuel budget. | lint evaluating remote content in-process |
-| 3 | FLUX Path B (VM proofs) finally gets a production consumer; SHA-256 proof certificate from `to_bytecode()` attaches per verified canon. | proofs that never ran (fleet memory: FLUX audit, Path A vs B) |
+| 3 | FLUX Path B (VM proofs) finally gets a production consumer; SHA-256 proof certificate from `to_bytecode()` attaches per verified canon. **BUILT 2026-09-20 (lane lane-p-verify-gate): the gate runs on every push/PR — see `.github/workflows/flux-canon-gate.yml` (quilt-canon-cli) and `.github/workflows/canon-verify.yml` (quilt-live-canon).** | proofs that never ran (fleet memory: FLUX audit, Path A vs B) |
 
 ## Build order (one evening each)
 
 1. **P0 — conformance:** vendor interpreter; compile the 16-dial serializer to
    `canon_verify.fxu`; assert module reproduces `0xe435d91d6d92a1d8` (known test cell).
 2. **P0 — lint wiring:** lint gains `--verify-flux` flag; sandboxed verify on the Tier-1
-   roster; fuel budget enforced.
+   roster; fuel budget enforced. **BUILT (P0)** — and extended P2: `--verify-flux` now runs
+   the *full* 71-paper fabric gate by default (see the lane-P section below); `--quick`
+   keeps the 9-cell smoke.
 3. **P1 — 71-paper fabric:** serializer for the full canon cell list → 0x445185a3a99fd2e7.
 4. **P1 — proof certificates:** `to_bytecode()` SHA-256 recorded per repo CANON.json
    (`verified.flux_proof`), so provenance survives independent of any host.
@@ -191,5 +193,80 @@ certs at `verified.flux_proof` — the exact field path the design names.
 
 `SuperInstance/quilt-live-canon @ canon-71-full-corpus`, commit `371e07d`
 (bundled CANON in worker.js; live hash equals the target by construction,
-guarded upstream by test/canon-hash.test.mjs). Snapshot regeneration:
-`python3 -m flux_verifier.corpus._regen path/to/worker.js`.
+guarded upstream by test/canon-hash.test.mjs).
+
+---
+
+## BUILT status — P2 complete (2026-09-20, lane lane-p-verify-gate)
+
+### What exists now (stacked on P1)
+
+| Piece | Where | Notes |
+|-------|-------|-------|
+| The full 71-paper fabric gate is lint's default `--verify-flux` | `fleet-canon/lint.py` | three defense lines, each a different drift (below); `--quick` keeps the 9-cell P0 smoke; `--flux-corpus`/`--flux-certs` gate candidate bytes |
+| CI on every push/PR | `.github/workflows/flux-canon-gate.yml` | `flux-gate` job = verifier self-test (18) + gate tests (9) + CLI gate over the pinned corpus + `--quick` smoke. Hermetic, stdlib-only. `node-cli` job = the live-service smoke (currently red: the deployed worker still serves the pre-71 corpus — deployment lag, not drift; require only `flux-gate` in branch protection) |
+| Companion data-layer gate | quilt-live-canon PR #2, branch `lane-p-verify-gate` | `.github/workflows/canon-verify.yml` runs `flux_verifier/live_check.py` against the PR's own worker.js on every corpus-touching push/PR |
+| Corpus pinning: **vendored snapshot** | `flux_verifier/corpus/canon_71.json` | justified below |
+| Gate tests, both directions | `test/test_lint_gate.py` | 9 checks: clean passes; paper tamper fails loud (vm/cert lines never fire); cert tamper fails loud (corpus/fabric stay green); fuel boundary measured (steps−1 and steps budgets both die OUT_OF_FUEL); CLI e2e exits 0 clean / 1 tampered |
+
+### The gate's three defense lines
+
+1. **corpus** — the pinned snapshot's *reference* fabric hash must equal `CANON_TARGET`.
+   Cheap (pure Python, no fuel); catches snapshot tamper or a stale bundle before any
+   fuel is burned. Failure shape: `flux-verify: corpus drift — reference fabric hash 0x… != canon target 0x445185a3a99fd2e7`.
+2. **fabric** — the sandboxed vm run over the corpus bytes must HALT with `CANON_TARGET`
+   under the measured budget (152,580 steps, budget 15,258,000 = 100× measured).
+   Catches interpreter/codegen/serializer drift. Failure shape: the FluxVerifyError text.
+3. **certs** — every recorded proof certificate (71 per-paper module SHA-256s + fabric
+   cert) recomputed from corpus + codegen. Catches cert-file tamper; pins bytecode identity.
+   Failure shape: `flux-verify: cert drift — paper N: module_sha256 drift …`.
+
+Any drift is a lint FAILURE with the same reporting shape as the schema/edge/staleness
+drifts. Absent tooling stays an honest SKIP. One corpus object flows through all three
+lines — gate, vm, and certs verify identical bytes, never three loads that could disagree.
+
+### Corpus fetch-vs-vendor: vendored, and why
+
+The gate verifies a **vendored snapshot** (`canon_71.json`, provenance pinned by commit
+SHA in `corpus/__init__.py`: repo, branch, commit `371e07d…`) rather than fetching at
+lint time. Justification, in the doctrine's words (numbers verified, not trusted):
+
+* **A gate that can fail because of the network is not an immune system.** Live-fetch
+  couples the gate to DNS, GitHub availability, and branch mutability — an outage or a
+  force-push could false-fail (or, worse, false-pass a cached fallback) the build.
+  Vendoring keeps the gate hermetic: CI green means *the canon verifies*, full stop.
+* **Vendoring is honest when the update path is documented.** It is:
+  `python3 flux_verifier/corpus/_regen.py --fetch` downloads worker.js at the *pinned
+  commit* and regenerates — it cannot silently follow a moved branch. Tracking upstream
+  means changing the pin (repo@sha) in `corpus/__init__.py`, then `--fetch`; line 1 of
+  the gate proves the rewrite produced the right bytes on the next lint run.
+* **Freshness is the companion CI's job, not the gate's.** quilt-live-canon's
+  canon-verify workflow gates *candidate* bytes before they become canon; the lint
+  gate verifies the *pinned* canon. Two immune-system layers, two directions.
+
+### Companion data-layer gate (quilt-live-canon)
+
+`flux_verifier/live_check.py <worker.js>` parses a candidate worker.js CANON block,
+reference-hashes it vs the target, and sandbox-verifies the fabric over the candidate
+bytes. quilt-live-canon's `.github/workflows/canon-verify.yml` (PR #2) runs it on every
+push/PR touching worker.js — so corpus drift fails **before deploy**, in the repo that
+owns the data.
+
+### CI links
+
+* Gate workflow (this repo): `.github/workflows/flux-canon-gate.yml` — runs on push/PR
+  to `master`/`flux-*`/`lane-*` when the verifier, lint, tests, CLI, or the workflow itself change.
+* Data-layer companion: `SuperInstance/quilt-live-canon` PR #2, branch `lane-p-verify-gate`.
+* Pre-existing remote drift observed while wiring this (same on the base branch, not
+  introduced here): `lint.py` remote mode reports 4 edge failures — hermit→duke-lab,
+  duke-lab→tidepool, quilt→hermit, quilt→tidepool one-way edges in the live CANON.md
+  stubs. The gate suite runs over a committed stub roster so tamper signal stays clean.
+
+### What remains
+
+- **P2 — escape extension `0xFF 0x80` CANON_DIAL_FMA:** unchanged from the P0 note —
+  adding a sub-opcode means forking the vendored interpreter, which must come with its
+  own conformance test and a pin update.
+- canon-lint.yml's push trigger lists `main`; this repo's default branch is `master`
+  (the schedule cron still fires daily, so the remote lint is not dead — but the push
+  trigger never matches). One-line fix, left for the canon-lint lane.
