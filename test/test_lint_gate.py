@@ -180,6 +180,26 @@ def check_cli_end_to_end(tmp: str) -> None:
     ok("cli: --flux-corpus <tampered> exits 1 with the drift message")
 
 
+def check_live_check_entrypoint(tmp: str) -> None:
+    # hermetic smoke for the companion-CI entrypoint: a syntactically valid
+    # but wrong-size CANON block parses, then fails on the drift line —
+    # proving both the parse path and the exit-1 discipline without network.
+    mini = ('const CANON = {\n'
+            '  408: { number: 408, title: "F98 — Suite", f_number: 98, '
+            'phase: 222, date: "2026-09-03", ref_papers: [], '
+            'ref_f_numbers: [97] },\n'
+            '};\n')
+    cand = os.path.join(tmp, "worker_mini.js")
+    with open(cand, "w", encoding="utf-8") as fh:
+        fh.write(mini)
+    r = subprocess.run(
+        [sys.executable, os.path.join(ROOT, "flux_verifier", "live_check.py"),
+         cand], capture_output=True, text=True)
+    assert r.returncode == 1, r.stdout + r.stderr
+    assert "candidate corpus drift" in r.stdout
+    ok("live_check: candidate entrypoint parses then fails loud on drift (exit 1)")
+
+
 def main() -> int:
     print("canon-lint FLUX gate tests")
     tmp = tempfile.mkdtemp(prefix="flux-gate-test-")
@@ -190,6 +210,7 @@ def main() -> int:
         check_cert_tamper(tmp)
         check_fuel_boundary()
         check_cli_end_to_end(tmp)
+        check_live_check_entrypoint(tmp)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     print(f"ALL {len(PASS)} LINT GATE CHECKS PASS")
