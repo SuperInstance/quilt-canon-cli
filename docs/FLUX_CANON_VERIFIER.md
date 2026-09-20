@@ -93,3 +93,57 @@ with a conformance test, not a fork of the ISA.
 - This is the *third* substrate for the serializer. The difference: the other two
   remain as reference ports; FLUX becomes the conformance oracle. If FLUX v3 drifts,
   the oracle moves with a pinned hash, not with three silent copies.
+
+---
+
+## BUILT status — P0 complete (2026-09-20, lane flux-verifier-p0)
+
+### What exists now
+
+| Piece | Where | Commit |
+|-------|-------|--------|
+| Vendored PR #4 interpreter (fuel governance: capability-gated FUEL_SET default-deny, ExitReason enum, per-instruction meter). Byte-identical, sha256 `776388d5…6238`, pinned in `flux_verifier/__init__.py`. | `flux_verifier/interpreter.py` | `1d88077` |
+| Serializer port, verbatim from quilt-live-canon-pypi @ b14a821 (branch canon-canonical-sync). Known-answer contract cell + FNV-1a 64-bit. | `flux_verifier/canon_serializer.py` | `a6ee8c9` |
+| Module codegen + frozen `canon_verify.fxu` (contract cell, 65 bytes in). SPEC = codegen + pinned interpreter, not one frozen byte string — see constraint log. | `flux_verifier/fxu_codegen.py`, `flux_verifier/canon_verify.fxu` | `a6ee8c9` |
+| Host embedding + self-test (12 checks, all pass). `allow_fuel_set=False`; fuel host-set; exact step self-measurement. | `flux_verifier/host.py`, `test/test_flux_verify.py` | `9ef31b3` |
+| lint `--verify-flux`: pinned contract cell + seeded sample through the sandbox; honest SKIP when tooling absent; green with and without the flag. | `fleet-canon/lint.py` | `c45dbe5` |
+
+**P0 conformance claim:** the module reproduces `0xe435d91d6d92a1d8` for `serialize_cell(1, list(range(1,17)), [2,3,4])` on the pinned interpreter, fuel-accounted (table below), and the reproduction is proven against escape attempts.
+
+### Fuel accounting — contract cell (65-byte input)
+
+| Quantity | Value |
+|----------|-------|
+| Module bytecode | 8771 bytes, sha256 `5e12a594b9f009010018e9dd2a525ee31f728de550942f37e7f7efe85e88568f` |
+| Exact metered instructions (fuel=0 measurement) | 3400 = init 8 + 65 bytes × 52 + 4×(ESCAPE+POP) FUEL_CHECK overhead 8 + output loads 4 (HALT unmetered, excluded from run()'s count) |
+| Host budget (lint default) | 34000 = 10× measured steps (design's 100× was sized for the 71-paper corpus; single-cell headroom documented rather than silently inherited) |
+| Consumed / left | 3400 / 30600 |
+| Boundary: budget == 3400 | OUT_OF_FUEL on the last metered op — the killing instruction **executes** (fuel is decremented after op execution; death lands when the meter hits exactly 0), HALT never reached, 3400 steps counted |
+| Boundary: budget == 3401 | Clean HALT, 1 fuel to spare |
+| Infinite loop, budget 1000 | OUT_OF_FUEL at exactly 1000 executed JMPs, steps == fuel |
+| FUEL_SET escape attempts | all trapped: denied under default-deny (`FuelSetDenied`, trap leaves exit_reason RUNNING); raise-attempt and 0-attempt (the "unlimited" hatch) both `FuelSetViolation` under a granted VM with an active budget; lowering (1000→50) honored and then metered to death at 50 steps |
+
+Governor semantics that matter for hosts (read from the vendored source, not the draft): HALT never meters and is excluded from `run()`'s step count; the OUT_OF_FUEL killing instruction is included. Fuel enforcement is the per-instruction meter — FUEL_CHECK is advisory/observability only, so draft §9.1 liveness compliance cannot be what keeps you safe.
+
+### Interpreter-vs-draft discrepancy log (encoding: interpreter wins, always)
+
+| # | Topic | ISA v3 draft (`isa-v3-draft.md`) | Reference `interpreter.py` (PR #4, wins) |
+|---|-------|----------------------------------|------------------------------------------|
+| 1 | Machine model | 256-GPR register machine | Pure stack machine |
+| 2 | Encoding | 2-byte compressed + 4-byte | 1-byte opcode + immediates (PUSH u32, LOAD/STORE u16 addr) |
+| 3 | HALT opcode | 0x01 | 0x00 |
+| 4 | NOP opcode | 0x00 | 0x01 |
+| 5 | FUEL_CHECK | core 0x09 (§9 mentions 0x60) | escape `0xFF 0x01 0x01` (FUEL op only in trace logs) |
+| 6 | FUEL_SET | core 0x61, register operand | escape `0xFF 0x02 0x05` + u16 imm; capability-gated, monotonic-lower |
+| 7 | LOAD/STORE | rd, rs1, imm8 addressing | u16 absolute only, 0x40/0x41; **STORE truncates to 16 bits** — no 8/32-bit store exists |
+| 8 | Immediate load | LOADI 0x05 imm16 | PUSH 0x55 imm32 |
+| 9 | JMP | 0x40 rel imm8 | 0x50 abs u16 |
+| 10 | Doc accuracy | — | Interpreter docstring claims "44 core opcodes … aligned to Draft" — overstates; use this table |
+
+Constraint #7 is the one that shaped the build: 64-bit FNV runs as 4×u16 limbs (addresses 200–219, double-buffered per byte), and every 32-bit intermediate (carries, `a0*p2` cross terms) lives on the stack only — no wide value ever round-trips through data memory. The draft's register file would have made this trivial; the stack machine makes it honest.
+
+### What remains
+
+- **P1 — 71-paper fabric:** serializer for the full canon cell list → `CANON_TARGET 0x445185a3a99fd2e7`. Straightforward: codegen is already length-parameterized; the work is corpus cell enumeration, not VM work.
+- **P1 — proof certificates:** `to_bytecode()` SHA-256 recorded per repo CANON.json (`verified.flux_proof`).
+- **P2 — escape extension `0xFF 0x80` CANON_DIAL_FMA:** the draft's escape space is real in the interpreter (`ESCAPE_PREFIX 0xFF`, `_dispatch_extension`), but adding a sub-opcode means forking the vendored interpreter — by the vendoring rule that fork must come with its own conformance test and a pin update.
