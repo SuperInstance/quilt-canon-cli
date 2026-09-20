@@ -1,0 +1,952 @@
+{
+ "408": {
+  "date": "2026-09-03",
+  "f_number": 98,
+  "number": 408,
+  "phase": 222,
+  "ref_f_numbers": [
+   97
+  ],
+  "ref_papers": [],
+  "title": "F98 — The 165-Test Polyformalism Conformance Suite"
+ },
+ "409": {
+  "date": "2026-09-03",
+  "f_number": 99,
+  "number": 409,
+  "phase": 223,
+  "ref_f_numbers": [
+   100,
+   115
+  ],
+  "ref_papers": [],
+  "title": "F99 — The Quilt Atlas: 47 Repositories, 280K Lines of Code, 1500+ Tests"
+ },
+ "410": {
+  "date": "2026-09-03",
+  "f_number": 100,
+  "number": 410,
+  "phase": 224,
+  "ref_f_numbers": [
+   99,
+   104,
+   115
+  ],
+  "ref_papers": [],
+  "title": "F100 — Anatomy of quilt-substrate: 11 Primitives, 4 Properties, 19 Openers, 405 Tests"
+ },
+ "411": {
+  "date": "2026-09-03",
+  "f_number": 101,
+  "number": 411,
+  "phase": 225,
+  "ref_f_numbers": [
+   97,
+   98,
+   100
+  ],
+  "ref_papers": [],
+  "title": "F101 — Playtest: 6 Assets, 4 Controllers, 2 Bugs, 1 Real Result"
+ },
+ "412": {
+  "date": "2026-09-03",
+  "f_number": 102,
+  "number": 412,
+  "phase": 226,
+  "ref_f_numbers": [
+   97,
+   101,
+   100
+  ],
+  "ref_papers": [],
+  "title": "F102 — Two-Regime Playtest: 2008 Crisis vs 2010-2024 Bull"
+ },
+ "413": {
+  "date": "2026-09-03",
+  "f_number": 103,
+  "number": 413,
+  "phase": 227,
+  "ref_f_numbers": [
+   97,
+   98,
+   101,
+   102
+  ],
+  "ref_papers": [],
+  "title": "F103 — Wide-N Playtest: 12 Asset Classes, 30 Windows, 4 Ablations, 100-Agent Swarm"
+ },
+ "414": {
+  "date": "2026-09-03",
+  "f_number": 104,
+  "number": 414,
+  "phase": 228,
+  "ref_f_numbers": [
+   100,
+   115,
+   116,
+   117
+  ],
+  "ref_papers": [],
+  "title": "F104 — Polyformalism Benchmark: 1.71 µs/step (C) vs 228 µs/step (Python)"
+ },
+ "415": {
+  "date": "2026-09-03",
+  "f_number": 105,
+  "number": 415,
+  "phase": 229,
+  "ref_f_numbers": [
+   100,
+   104,
+   105
+  ],
+  "ref_papers": [],
+  "title": "When a Time-Series Forecaster Beats LQR: A Cell-Driven Control Architecture for Robotic Manipulators"
+ },
+ "416": {
+  "date": "2026-09-03",
+  "f_number": 106,
+  "number": 416,
+  "phase": 230,
+  "ref_f_numbers": [
+   100,
+   104,
+   106
+  ],
+  "ref_papers": [],
+  "title": "Brownian Confidence Intervals for Time-Series Forecasts: Why Your CI Should Grow with √t"
+ },
+ "417": {
+  "date": "2026-09-03",
+  "f_number": 107,
+  "number": 417,
+  "phase": 231,
+  "ref_f_numbers": [
+   95,
+   100
+  ],
+  "ref_papers": [],
+  "title": "F107 — Forecasts as Durable Semantic Objects: Multi-Agent CRDT Merge"
+ },
+ "418": {
+  "date": "2026-09-03",
+  "f_number": 108,
+  "number": 418,
+  "phase": 232,
+  "ref_f_numbers": [
+   100,
+   104,
+   106,
+   108
+  ],
+  "ref_papers": [],
+  "title": "Counter-Intuitive Robustness: How a Volatility-Adaptive Trading Strategy Benefits from 10-25% Stale Data"
+ },
+ "419": {
+  "date": "2026-09-03",
+  "f_number": 109,
+  "number": 419,
+  "phase": 233,
+  "ref_f_numbers": [
+   98,
+   100,
+   115
+  ],
+  "ref_papers": [],
+  "title": "F109 — The Playtest Workflow: End-to-End Verification of AI Systems"
+ },
+ "420": {
+  "date": "2026-09-03",
+  "f_number": 110,
+  "number": 420,
+  "phase": 234,
+  "ref_f_numbers": [
+   100,
+   104,
+   115,
+   116,
+   117,
+   118
+  ],
+  "ref_papers": [],
+  "title": "F110 — Polyformalism: When the Same Cell Shape Works in C, Python, Rust, and Beyond"
+ },
+ "421": {
+  "date": "2026-09-03",
+  "f_number": 111,
+  "number": 421,
+  "phase": 233,
+  "ref_f_numbers": [
+   100,
+   110,
+   111
+  ],
+  "ref_papers": [],
+  "title": "Risk-Management as a Feature: When the Goal is Losing Less, Not Making More"
+ },
+ "422": {
+  "date": "2026-09-03",
+  "f_number": 112,
+  "number": 422,
+  "phase": 234,
+  "ref_f_numbers": [
+   110,
+   111,
+   112
+  ],
+  "ref_papers": [],
+  "title": "The Reflexivity Problem: How Multi-Agent Time-Series Forecasters Create Self-Fulfilling Predictions"
+ },
+ "423": {
+  "date": "2026-09-03",
+  "f_number": 113,
+  "number": 423,
+  "phase": 235,
+  "ref_f_numbers": [
+   100,
+   115,
+   116
+  ],
+  "ref_papers": [],
+  "title": "F113 — QUF: Quilt Universal Format — The 6th Cutting-Edge Adoption"
+ },
+ "424": {
+  "date": "2026-09-03",
+  "f_number": 114,
+  "number": 424,
+  "phase": 236,
+  "ref_f_numbers": [
+   100,
+   113,
+   115,
+   116,
+   117
+  ],
+  "ref_papers": [],
+  "title": "F114 — Verilog Cells Meet Time-Series Forecasters: The q_cell × TimeCell Synergy"
+ },
+ "425": {
+  "date": "2026-09-03",
+  "f_number": 115,
+  "number": 425,
+  "phase": 237,
+  "ref_f_numbers": [],
+  "ref_papers": [
+   426,
+   427
+  ],
+  "title": "F115 — The Logical Routes: VHDL × Verilog × the QUF bit-exactness"
+ },
+ "426": {
+  "date": "2026-09-03",
+  "f_number": 116,
+  "number": 426,
+  "phase": 238,
+  "ref_f_numbers": [
+   115
+  ],
+  "ref_papers": [],
+  "title": "F116 — The 5+1+1+1+1+1+1+1+1+1+1 Opcodes in 5 Substrates: A Polyformalism Atlas"
+ },
+ "427": {
+  "date": "2026-09-03",
+  "f_number": 117,
+  "number": 427,
+  "phase": 239,
+  "ref_f_numbers": [
+   115,
+   116
+  ],
+  "ref_papers": [],
+  "title": "F117 — The 5-Substrate Polyformalism: Python × C × Rust × Verilog × VHDL, One Cell"
+ },
+ "428": {
+  "date": "2026-09-03",
+  "f_number": 118,
+  "number": 428,
+  "phase": 240,
+  "ref_f_numbers": [
+   115,
+   116,
+   117
+  ],
+  "ref_papers": [],
+  "title": "F118 — The Polyformalism in Production: A Play-Test + Benchmark"
+ },
+ "429": {
+  "date": "2026-09-03",
+  "f_number": 119,
+  "number": 429,
+  "phase": 241,
+  "ref_f_numbers": [
+   115,
+   116,
+   117,
+   118
+  ],
+  "ref_papers": [],
+  "title": "F119 — The 6-Substrate Polyformalism: cell-runtime Joins the Canon"
+ },
+ "430": {
+  "date": "2026-09-03",
+  "f_number": 120,
+  "number": 430,
+  "phase": 242,
+  "ref_f_numbers": [
+   115,
+   119,
+   120
+  ],
+  "ref_papers": [],
+  "title": "F120 — Shape RAG: The Cell IS the Embedding"
+ },
+ "431": {
+  "date": "2026-09-03",
+  "f_number": 121,
+  "number": 431,
+  "phase": 243,
+  "ref_f_numbers": [
+   120,
+   121
+  ],
+  "ref_papers": [],
+  "title": "F121 — Cell-as-Vector: The 4096-dim Flat Projection of a Cell Fabric"
+ },
+ "432": {
+  "date": "2026-09-03",
+  "f_number": 122,
+  "number": 432,
+  "phase": 244,
+  "ref_f_numbers": [
+   120,
+   121
+  ],
+  "ref_papers": [],
+  "title": "F122 — The Shape Store: 5 Indices on Cloudflare Vectorize"
+ },
+ "433": {
+  "date": "2026-09-03",
+  "f_number": 123,
+  "number": 433,
+  "phase": 245,
+  "ref_f_numbers": [
+   120,
+   122
+  ],
+  "ref_papers": [],
+  "title": "F123 — The Composer Agent: 5 Cells, 80 Parameters"
+ },
+ "434": {
+  "date": "2026-09-03",
+  "f_number": 124,
+  "number": 434,
+  "phase": 246,
+  "ref_f_numbers": [
+   120,
+   123,
+   124
+  ],
+  "ref_papers": [],
+  "title": "F124 — S-QL: The Shape Query Language"
+ },
+ "435": {
+  "date": "2026-09-03",
+  "f_number": 125,
+  "number": 435,
+  "phase": 247,
+  "ref_f_numbers": [
+   120,
+   124,
+   125
+  ],
+  "ref_papers": [],
+  "title": "F125 — The Shape-RAG API: 4 Endpoints, 10 Scenarios"
+ },
+ "436": {
+  "date": "2026-09-03",
+  "f_number": 126,
+  "number": 436,
+  "phase": 248,
+  "ref_f_numbers": [
+   120,
+   123,
+   126
+  ],
+  "ref_papers": [],
+  "title": "Dynamic Shape Morphing: Reinforcement Learning on Cell Fabrics"
+ },
+ "437": {
+  "date": "2026-09-03",
+  "f_number": 127,
+  "number": 437,
+  "phase": 249,
+  "ref_f_numbers": [
+   120,
+   123,
+   115,
+   125,
+   122,
+   127
+  ],
+  "ref_papers": [],
+  "title": "Dial-Aware Cell Addressing: From FNV-1a to Compositional Cell Identifiers"
+ },
+ "438": {
+  "date": "2026-09-03",
+  "f_number": 128,
+  "number": 438,
+  "phase": 250,
+  "ref_f_numbers": [
+   115,
+   128
+  ],
+  "ref_papers": [],
+  "title": "The Polyformalism Atlas: Mapping 6 Substrates onto 7 Algebraic Laws"
+ },
+ "439": {
+  "date": "2026-09-03",
+  "f_number": 129,
+  "number": 439,
+  "phase": 251,
+  "ref_f_numbers": [
+   115,
+   120,
+   122,
+   125
+  ],
+  "ref_papers": [],
+  "title": "F129 — The Live Canon: Papers as Cells, Reading as Navigation"
+ },
+ "440": {
+  "date": "2026-09-03",
+  "f_number": 130,
+  "number": 440,
+  "phase": 251,
+  "ref_f_numbers": [
+   115,
+   129
+  ],
+  "ref_papers": [],
+  "title": "F130 — The Polyformal Live Canon: One Cell, Five Substrates"
+ },
+ "441": {
+  "date": "2026-09-03",
+  "f_number": 131,
+  "number": 441,
+  "phase": 252,
+  "ref_f_numbers": [
+   115,
+   130
+  ],
+  "ref_papers": [],
+  "title": "F131 — The 3-Package Polyformalism: One Cell, Three Registries"
+ },
+ "442": {
+  "date": "2026-09-03",
+  "f_number": 132,
+  "number": 442,
+  "phase": 253,
+  "ref_f_numbers": [],
+  "ref_papers": [],
+  "title": "F132 — Operational Fictions as Concrete System-Prompt Noun-Phrases"
+ },
+ "443": {
+  "date": "2026-09-03",
+  "f_number": 133,
+  "number": 443,
+  "phase": 254,
+  "ref_f_numbers": [
+   132
+  ],
+  "ref_papers": [],
+  "title": "F133 — Operational Fictions as Falsifiable Claims (avg divergence 0.861)"
+ },
+ "444": {
+  "date": "2026-09-03",
+  "f_number": 134,
+  "number": 444,
+  "phase": 254,
+  "ref_f_numbers": [
+   132,
+   133
+  ],
+  "ref_papers": [],
+  "title": "F134 — The Quilt Cowboy: Orchestrator Over 12 Cheap Voices"
+ },
+ "445": {
+  "date": "2026-09-03",
+  "f_number": 135,
+  "number": 445,
+  "phase": 254,
+  "ref_f_numbers": [
+   132,
+   133
+  ],
+  "ref_papers": [],
+  "title": "F135 — The Wheelhouse Test: Scoring Fictions for 0300-in-a-Gale Tolerability"
+ },
+ "446": {
+  "date": "2026-09-03",
+  "f_number": 136,
+  "number": 446,
+  "phase": 254,
+  "ref_f_numbers": [
+   132,
+   133,
+   134,
+   135
+  ],
+  "ref_papers": [],
+  "title": "F136 — The Edge of the Doctrine — 6 Experiments"
+ },
+ "447": {
+  "date": "2026-09-03",
+  "f_number": 137,
+  "number": 447,
+  "phase": 254,
+  "ref_f_numbers": [
+   133,
+   136
+  ],
+  "ref_papers": [],
+  "title": "F137 — The Word-Level Metric is Broken (semantic divergence is real)"
+ },
+ "448": {
+  "date": "2026-09-03",
+  "f_number": 138,
+  "number": 448,
+  "phase": 254,
+  "ref_f_numbers": [
+   133,
+   137
+  ],
+  "ref_papers": [],
+  "title": "F138 — The Real Numbers — 12 Pairs with Semantic Divergence (0.231 vs 0.171)"
+ },
+ "449": {
+  "date": "2026-09-03",
+  "f_number": 139,
+  "number": 449,
+  "phase": 256,
+  "ref_f_numbers": [
+   129,
+   130,
+   131
+  ],
+  "ref_papers": [],
+  "title": "F139 — Wearable Neural Devices + Quilt — The Synergy of Signaling-as-Play"
+ },
+ "450": {
+  "date": "2026-09-03",
+  "f_number": 140,
+  "number": 450,
+  "phase": 257,
+  "ref_f_numbers": [
+   129,
+   133,
+   137,
+   138,
+   139
+  ],
+  "ref_papers": [],
+  "title": "F140 — The Negative Space: Decomposition × Composition × Double-Entry Bookkeeping of the Self"
+ },
+ "451": {
+  "date": "2026-09-03",
+  "f_number": 141,
+  "number": 451,
+  "phase": 258,
+  "ref_f_numbers": [
+   129,
+   140,
+   139
+  ],
+  "ref_papers": [],
+  "title": "F141 — The Co-Captain: A Symbiotic Digital Twin with a Hand-On / Hands-Off Dial"
+ },
+ "452": {
+  "date": "2026-09-03",
+  "f_number": 142,
+  "number": 452,
+  "phase": 258,
+  "ref_f_numbers": [
+   140,
+   141,
+   143
+  ],
+  "ref_papers": [],
+  "title": "F142 — The Back-Deck Game: Multi-Dimensional Scoring for Industrial Operations"
+ },
+ "453": {
+  "date": "2026-09-03",
+  "f_number": 143,
+  "number": 453,
+  "phase": 258,
+  "ref_f_numbers": [
+   140,
+   141,
+   142
+  ],
+  "ref_papers": [],
+  "title": "F143 — The Mudra-Band Emulator: Webcam-Based Hand Pose for Industrial Training"
+ },
+ "454": {
+  "date": "2026-09-03",
+  "f_number": 144,
+  "number": 454,
+  "phase": 259,
+  "ref_f_numbers": [
+   141,
+   143
+  ],
+  "ref_papers": [],
+  "title": "F144 — The Co-Captain in 5 Substrates: A Polyformalism Atlas"
+ },
+ "455": {
+  "date": "2026-09-03",
+  "f_number": 145,
+  "number": 455,
+  "phase": 259,
+  "ref_f_numbers": [
+   141,
+   144
+  ],
+  "ref_papers": [],
+  "title": "F145 — Bottle-Router → Cell-Router: Lifting A2A Bottles into Quilt Cells"
+ },
+ "456": {
+  "date": "2026-09-03",
+  "f_number": 146,
+  "number": 456,
+  "phase": 259,
+  "ref_f_numbers": [
+   142,
+   143
+  ],
+  "ref_papers": [],
+  "title": "F146 — Real MediaPipe Hands in the Back-Deck Game: From Simulator to Production"
+ },
+ "457": {
+  "date": "2026-09-03",
+  "f_number": 150,
+  "number": 457,
+  "phase": 260,
+  "ref_f_numbers": [
+   140,
+   141,
+   142,
+   151
+  ],
+  "ref_papers": [],
+  "title": "F150 — Tetris + F140: The Audit Game"
+ },
+ "458": {
+  "date": "2026-09-03",
+  "f_number": 151,
+  "number": 458,
+  "phase": 260,
+  "ref_f_numbers": [
+   140,
+   141,
+   142,
+   150
+  ],
+  "ref_papers": [],
+  "title": "F151 — The Wheelhouse Game: Weather Routing as an F140 Audit"
+ },
+ "459": {
+  "date": "2026-09-03",
+  "f_number": 149,
+  "number": 459,
+  "phase": 260,
+  "ref_f_numbers": [
+   140,
+   141,
+   142,
+   143,
+   144,
+   145,
+   146,
+   150,
+   151
+  ],
+  "ref_papers": [],
+  "title": "F149 — Quilt for the Crew: A Non-Technical Handbook"
+ },
+ "460": {
+  "date": "2026-09-03",
+  "f_number": 148,
+  "number": 460,
+  "phase": 252,
+  "ref_f_numbers": [
+   114,
+   98,
+   100,
+   104,
+   113,
+   148
+  ],
+  "ref_papers": [],
+  "title": "F148 — Canon Expansion: Bringing F98-F114 into the Live Canon"
+ },
+ "461": {
+  "date": "2026-09-03",
+  "f_number": 152,
+  "number": 461,
+  "phase": 261,
+  "ref_f_numbers": [
+   141,
+   144,
+   145
+  ],
+  "ref_papers": [],
+  "title": "F152 — The Co-Captain REST API: From Local to Fleet"
+ },
+ "462": {
+  "date": "2026-09-03",
+  "f_number": 153,
+  "number": 462,
+  "phase": 261,
+  "ref_f_numbers": [
+   144
+  ],
+  "ref_papers": [],
+  "title": "F153 — The 5-Substrate Echo Test: Polyformalism as a Deployment Substrate"
+ },
+ "463": {
+  "date": "2026-09-03",
+  "f_number": 154,
+  "number": 463,
+  "phase": 261,
+  "ref_f_numbers": [
+   141,
+   142,
+   149,
+   151
+  ],
+  "ref_papers": [],
+  "title": "F154 — The Cowbell: A Persistent Crew-Member Notification System"
+ },
+ "464": {
+  "date": "2026-09-03",
+  "f_number": 155,
+  "number": 464,
+  "phase": 262,
+  "ref_f_numbers": [
+   140,
+   152,
+   154,
+   110,
+   115
+  ],
+  "ref_papers": [],
+  "title": "F155 — The Canon Zoo: A System Prompt for Inspiration Through Play"
+ },
+ "465": {
+  "date": "2026-09-03",
+  "f_number": 156,
+  "number": 465,
+  "phase": 263,
+  "ref_f_numbers": [
+   140,
+   141,
+   144,
+   152,
+   154
+  ],
+  "ref_papers": [],
+  "title": "F156 — The Algebra of the 4-Move Pipeline: R ∘ D ∘ C ∘ L"
+ },
+ "466": {
+  "date": "2026-09-03",
+  "f_number": 157,
+  "number": 466,
+  "phase": 263,
+  "ref_f_numbers": [
+   148,
+   110,
+   130,
+   150,
+   300
+  ],
+  "ref_papers": [],
+  "title": "F157 — Canon Expansion II: Lifting F120-F139 from AI-Writings to Live Canon"
+ },
+ "467": {
+  "date": "2026-09-03",
+  "f_number": 158,
+  "number": 467,
+  "phase": 264,
+  "ref_f_numbers": [
+   110,
+   140,
+   152,
+   154,
+   156
+  ],
+  "ref_papers": [],
+  "title": "F158 — The Mechanic Doctrine: Agent Priming for Vibe-Coders"
+ },
+ "468": {
+  "date": "2026-09-04",
+  "f_number": 159,
+  "number": 468,
+  "phase": 265,
+  "ref_f_numbers": [
+   158,
+   110,
+   140,
+   152,
+   156
+  ],
+  "ref_papers": [],
+  "title": "F159 — Seven Novel Enhancements from 2026 Agent-Prompting Best Practices"
+ },
+ "469": {
+  "date": "2026-09-04",
+  "f_number": 160,
+  "number": 469,
+  "phase": 266,
+  "ref_f_numbers": [
+   158,
+   110,
+   115,
+   140,
+   154
+  ],
+  "ref_papers": [],
+  "title": "F160 — The Working Animal Doctrine: From Mechanic to Shepherd"
+ },
+ "470": {
+  "date": "2026-09-04",
+  "f_number": 161,
+  "number": 470,
+  "phase": 266,
+  "ref_f_numbers": [
+   158,
+   159,
+   140,
+   156
+  ],
+  "ref_papers": [],
+  "title": "F161 — Conservation Laws as Fences: The Physics of Working Animals"
+ },
+ "471": {
+  "date": "2026-09-04",
+  "f_number": 162,
+  "number": 471,
+  "phase": 266,
+  "ref_f_numbers": [
+   115,
+   116,
+   117,
+   118,
+   119,
+   161
+  ],
+  "ref_papers": [],
+  "title": "F162 — The PLATO Room Protocol: A Cell as a Room, A Room as a Cell"
+ },
+ "472": {
+  "date": "2026-09-04",
+  "f_number": 163,
+  "number": 472,
+  "phase": 267,
+  "ref_f_numbers": [
+   115,
+   117,
+   119,
+   144,
+   161,
+   162
+  ],
+  "ref_papers": [],
+  "title": "F163 — Sonar Vision as 5 Quilt Cells: A Vessel's Perception Decomposed"
+ },
+ "473": {
+  "date": "2026-09-04",
+  "f_number": 164,
+  "number": 473,
+  "phase": 267,
+  "ref_f_numbers": [
+   160,
+   161,
+   162,
+   163
+  ],
+  "ref_papers": [],
+  "title": "F164 — cocapn-marine: The Working Animal Stack for the Vessel"
+ },
+ "474": {
+  "date": "2026-09-04",
+  "f_number": 165,
+  "number": 474,
+  "phase": 268,
+  "ref_f_numbers": [
+   158,
+   159,
+   160,
+   161,
+   162
+  ],
+  "ref_papers": [],
+  "title": "F165 — The Agent Priming Toolkit: 4 Layers, 3 Jobs, 1 Contract"
+ },
+ "475": {
+  "date": "2026-09-04",
+  "f_number": 166,
+  "number": 475,
+  "phase": 268,
+  "ref_f_numbers": [
+   158,
+   159,
+   163,
+   164
+  ],
+  "ref_papers": [],
+  "title": "F166 — The Mudra Vessel Bridge: Neural Input for Commercial Fishing"
+ },
+ "476": {
+  "date": "2026-09-04",
+  "f_number": 167,
+  "number": 476,
+  "phase": 268,
+  "ref_f_numbers": [
+   158,
+   159,
+   163,
+   164,
+   166
+  ],
+  "ref_papers": [],
+  "title": "F167 — The Mudra Vessel Bridge as a Data-Gathering Substrate for the Digital Twin"
+ },
+ "477": {
+  "date": "2026-09-04",
+  "f_number": 168,
+  "number": 477,
+  "phase": 268,
+  "ref_f_numbers": [
+   158,
+   159,
+   166,
+   167
+  ],
+  "ref_papers": [],
+  "title": "F168 — The Trust Ladder: Voice + Co-Labeling as the First Rungs"
+ },
+ "478": {
+  "date": "2026-09-04",
+  "f_number": 169,
+  "number": 478,
+  "phase": 268,
+  "ref_f_numbers": [
+   129,
+   140,
+   158,
+   167,
+   168
+  ],
+  "ref_papers": [],
+  "title": "F169 — Claim and Drill: From Metadata to Evidence"
+ }
+}
