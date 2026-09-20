@@ -16,9 +16,16 @@ Usage:
   python3 fleet-canon/lint.py                 # remote, over tier1.txt
   python3 fleet-canon/lint.py --dir fixtures  # local dirs {dir}/{repo}/CANON.md
   python3 fleet-canon/lint.py --enforce-coverage
+  python3 fleet-canon/lint.py --verify-flux   # + FLUX module vs reference hash check
 
 Stdlib only. GITHUB_TOKEN used if set (55+ API calls otherwise squeak under
 the anonymous 60/hr budget; the token makes it relaxed).
+
+--verify-flux (P0, see docs/FLUX_CANON_VERIFIER.md): runs the fuel-bounded
+FLUX canon-verifier module against the Python reference serializer for the
+pinned contract cell plus a seeded synthetic sample. When flux_verifier (or
+its pinned interpreter / canon_verify.fxu) is absent, lint prints an honest
+SKIP line and NEVER fails on that account.
 """
 from __future__ import annotations
 
@@ -26,6 +33,7 @@ import argparse
 import datetime as dt
 import json
 import os
+import random
 import re
 import sys
 import urllib.error
@@ -125,6 +133,66 @@ def as_list(value: object) -> list[str]:
     return [str(v) for v in value] if isinstance(value, list) else []
 
 
+def verify_flux(sample_size: int) -> tuple[list[str], list[str]]:
+    """FLUX module-vs-reference canon hash check (P0).
+
+    Returns (failures, notes). Absent tooling is an honest SKIP, never a
+    failure: the lint gate must stay green on hosts without the FLUX
+    interpreter vendored.
+    """
+    failures: list[str] = []
+    notes: list[str] = []
+    pkg = os.path.join(ROOT, "flux_verifier")
+    needed = ["interpreter.py", "canon_serializer.py", "host.py",
+              "canon_verify.fxu"]
+    missing = [f for f in needed if not os.path.exists(os.path.join(pkg, f))]
+    if missing:
+        notes.append(f"flux-verify: SKIP — flux_verifier incomplete "
+                     f"(missing {missing})")
+        return failures, notes
+    if ROOT not in sys.path:
+        sys.path.insert(0, ROOT)
+    try:
+        from flux_verifier import (  # noqa: PLC0415 — lazy by design
+            CONTRACT_CELL, CONTRACT_HASH, FluxVerifyError, verify_cell,
+        )
+    except ImportError as exc:
+        notes.append(f"flux-verify: SKIP — flux_verifier not importable ({exc})")
+        return failures, notes
+
+    def _run(cell_id: int, dials: list[int], neighbors: list[int],
+             pinned: int | None = None) -> dict:
+        result = verify_cell(cell_id, dials, neighbors)
+        if pinned is not None and result["vm_hash"] != pinned:
+            raise FluxVerifyError(
+                f"vm=0x{result['vm_hash']:016x} != pinned contract "
+                f"0x{pinned:016x}")
+        return result
+
+    checked = 0
+    try:
+        contract = _run(*CONTRACT_CELL, pinned=CONTRACT_HASH)
+        checked += 1
+        notes.append(
+            f"flux-verify: contract cell id=1 -> 0x{contract['vm_hash']:016x} "
+            f"({contract['steps']} steps, fuel {contract['fuel_consumed']}/"
+            f"{contract['fuel_budget']})")
+        rng = random.Random(20260920)
+        for _ in range(sample_size):
+            cid = rng.randrange(1, 2**32)
+            dials = [rng.randrange(0, 0x10000) for _ in range(16)]
+            nb = [rng.randrange(1, 2**32)
+                  for _ in range(rng.randrange(0, 5))]
+            _run(cid, dials, nb)
+            checked += 1
+    except Exception as exc:  # noqa: BLE001 — any drift/trap is a lint failure
+        failures.append(f"flux-verify: {exc}")
+    else:
+        notes.append(f"flux-verify: OK {checked}/{checked} cells agree "
+                     "(FLUX module == Python reference, fuel-bounded)")
+    return failures, notes
+
+
 def check_schema(repo: str, canon: dict[str, object]) -> list[str]:
     fails = []
     missing = [k for k in REQUIRED if k not in canon]
@@ -155,6 +223,14 @@ def main() -> int:
     ap.add_argument("--dir", help="local fixture dir {dir}/{repo}/CANON.md (no API calls)")
     ap.add_argument("--enforce-coverage", action="store_true",
                     help="missing CANON.md on Tier-1 becomes a failure")
+    ap.add_argument("--remote", action="store_true",
+                    help="scan GitHub remotes (default; flag accepted because "
+                         "CI invokes lint with --remote)")
+    ap.add_argument("--verify-flux", action="store_true",
+                    help="cross-check canon hashes: FLUX module vs Python "
+                         "reference (skips honestly when flux_verifier absent)")
+    ap.add_argument("--flux-sample", type=int, default=8,
+                    help="synthetic cells for --verify-flux (default 8)")
     args = ap.parse_args()
 
     repos = tier1_repos()
@@ -214,6 +290,13 @@ def main() -> int:
     for repo in coverage_missing:
         msg = f"coverage: {repo} has no CANON.md (Tier-1 requires one)"
         (failures if args.enforce_coverage else warnings).append(msg)
+
+    # FLUX module-vs-reference canon hash check (P0). Absent tooling skips.
+    if args.verify_flux:
+        flux_failures, flux_notes = verify_flux(args.flux_sample)
+        failures.extend(flux_failures)
+        for note in flux_notes:
+            print(f"  INFO  {note}")
 
     print(f"canon-lint: {len(canons)}/{len(repos)} Tier-1 repos curated")
     for warning in warnings:
