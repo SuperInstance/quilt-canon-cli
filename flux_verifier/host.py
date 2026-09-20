@@ -15,7 +15,7 @@ from __future__ import annotations
 import hashlib
 
 from .canon_serializer import fnv1a_64_bytes, serialize_cell
-from .fxu_codegen import build_module
+from .fxu_codegen import build_module, memory_size_for
 from .interpreter import ExitReason, FluxVM
 
 FUEL_HEADROOM = 10     # budget = measured_steps * HEADROOM (design: 100x corpus;
@@ -32,13 +32,21 @@ class FluxVerifyError(RuntimeError):
 _module_cache: dict[int, tuple[bytes, int]] = {}
 
 
+def _measure_ceiling(n: int) -> int:
+    """run() step ceiling for a module over n bytes: the exact cost is
+    ~52n + fuel-check overhead; the ceiling only guards against a runaway
+    measurement, fuel is the real governor."""
+    return 1000 + 64 * n
+
+
 def _module_for(n: int) -> tuple[bytes, int]:
     """(bytecode, exact_instructions_at_unlimited_fuel), cached per length."""
     if n not in _module_cache:
         code = build_module(n)
-        probe = FluxVM(memory_size=256, stack_size=256, allow_fuel_set=False)
+        probe = FluxVM(memory_size=memory_size_for(n), stack_size=256,
+                       allow_fuel_set=False)
         probe.load(code)
-        steps = probe.run()          # fuel=0 -> unlimited; measures exact cost
+        steps = probe.run(max_steps=_measure_ceiling(n))  # fuel=0 -> unlimited
         if probe.exit_reason != ExitReason.HALT:
             raise FluxVerifyError(
                 f"self-measure failed: exit={ExitReason(probe.exit_reason).name}")
@@ -57,13 +65,20 @@ def module_sha256(n: int | None = None) -> str:
 def run_module(data: bytes, fuel: int = 0) -> tuple[int, int, int, str]:
     """Run the verifier module over data. Returns (hash, steps, fuel_left, exit).
     fuel=0 means unlimited (measurement mode); the host normally passes a
-    finite budget."""
-    code, _ = _module_for(len(data))
-    vm = FluxVM(memory_size=256, stack_size=256, allow_fuel_set=False)
+    finite budget.
+
+    The run() max_steps ceiling is set above both the exact metered cost and
+    any finite fuel budget, so fuel — never the ceiling — is the binding
+    constraint; a ceiling hit means a bug, not a budget.
+    """
+    code, measured = _module_for(len(data))
+    vm = FluxVM(memory_size=memory_size_for(len(data)), stack_size=256,
+                allow_fuel_set=False)
     vm.memory[0:len(data)] = data
     vm.fuel = fuel
     vm.load(code)
-    steps = vm.run()
+    ceiling = (fuel if fuel > 0 else measured) + 1000
+    steps = vm.run(max_steps=ceiling)
     exit_name = ExitReason(vm.exit_reason).name
     if vm.exit_reason != ExitReason.HALT:
         return (0, steps, vm.fuel, exit_name)
