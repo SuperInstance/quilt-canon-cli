@@ -1,0 +1,25 @@
+# canon-lint CI — the 27/27 Tier-1 curation is a contract; this makes it a build failure.
+
+name: canon-lint
+
+on:
+  push:
+    branches: [canon-lint-tool, main]
+    paths: ['fleet-canon/**', '.github/workflows/canon-lint.yml']
+  schedule:
+    # daily at 18:47 UTC (02:47 Asia/Shanghai — off-peak, after the cron sweeps)
+    - cron: '47 18 * * *'
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: canon-lint over the Tier-1 roster
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 fleet-canon/lint.py --remote
