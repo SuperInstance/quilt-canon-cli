@@ -1,6 +1,6 @@
 {
   "name": "@superinstance/quilt-canon-cli-gh",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A unified CLI for the Live Canon. `canon claim`, `canon drill`, `canon hash`, `canon graph`, `canon paper`. Wraps the @superinstance/canon-*, @superinstance/live-canon packages.",
   "main": "index.js",
   "bin": {
