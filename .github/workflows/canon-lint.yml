@@ -19,6 +19,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: hardening tests — rate-limited sweep is INCOMPLETE, never PASS
+        run: python3 test/test_canon_lint_hard.py
       - name: canon-lint over the Tier-1 roster
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
