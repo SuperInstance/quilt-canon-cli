@@ -128,7 +128,7 @@ def check_cert_integrity(certs: dict, canon: dict | None = None) -> list[str]:
             problems.append(f"paper {number}: cell_hash drift vs reference")
         if len(data) != cert["n_bytes"]:
             problems.append(f"paper {number}: n_bytes drift")
-    facts = fabric_fuel_facts()
+    facts = fabric_fuel_facts(canon)
     fab = certs.get("fabric", {})
     fabric_code = build_module(facts["n_bytes"])
     digest = hashlib.sha256(fabric_code).hexdigest()

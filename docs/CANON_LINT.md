@@ -60,8 +60,18 @@ resolutions; lint exists so that table stays short.
 python3 fleet-canon/lint.py                    # remote, over tier1.txt
 python3 fleet-canon/lint.py --dir fixtures     # local dirs, no API calls
 python3 fleet-canon/lint.py --enforce-coverage # missing CANON.md = failure
+python3 fleet-canon/lint.py --verify-flux      # + the FULL 71-paper FLUX gate
+python3 fleet-canon/lint.py --verify-flux --quick   # 9-cell smoke instead
 node --test test/test.js                       # the gate's own contract tests
 ```
+
+`--verify-flux` is the canon's immune system at lint time: three defense
+lines (corpus reference hash vs target, sandboxed fabric run under the
+measured fuel budget, full proof-certificate recompute). Any drift is a
+lint FAILURE with the same reporting shape as the other checks. Absent
+`flux_verifier` tooling is an honest SKIP. `--flux-corpus`/`--flux-certs`
+gate candidate bytes instead of the vendored bundle. See
+`docs/FLUX_CANON_VERIFIER.md` for the full discipline.
 
 CI runs both on every push and pull request (`.github/workflows/canon-lint.yml`).
 `GITHUB_TOKEN`, if set, relaxes the GitHub API budget.
@@ -73,7 +83,9 @@ Lint answers "is the stub well-formed and current?" The next question is
 sandbox is the point of `docs/FLUX_CANON_VERIFIER.md`: a fuel-bounded FLUX
 module recomputes a canon's declared hashes under an auditable instruction
 budget, so a hash stops being a string a stub *asserts* and becomes a value
-the substrate *reproduces*. Read that doc next if you are building anything
+the substrate *reproduces*. **Built (P0+P1+P2):** `lint.py --verify-flux`
+now runs that sandbox as the gate, and `.github/workflows/flux-canon-gate.yml`
+runs it on every push/PR. Read that doc next if you are building anything
 that trusts a hash.
 
 ## For agents
